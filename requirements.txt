@@ -8,10 +8,10 @@ langchain-chroma
 langchain-text-splitters
 chromadb
 pypdf
-streamlit
 python-multipart
 requests
 python-dotenv
-sentence-transformers
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.1.0+cpu
+numpy<2.0
+torch==2.4.0
+sentence-transformers==2.7.0
+transformers==4.40.0
