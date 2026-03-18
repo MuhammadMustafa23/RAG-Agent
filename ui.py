@@ -1,9 +1,11 @@
 import streamlit as st
 import requests
 import uuid
+import os
+
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 st.set_page_config(page_title="RAG Agent", page_icon="📄", layout="wide")
-
 st.title("📄 RAG Agent — Multi-Document Knowledge Base")
 st.markdown("Upload multiple PDFs and have a conversation across all of them.")
 st.divider()
@@ -20,18 +22,17 @@ with st.sidebar:
 
     # Show existing documents
     try:
-        docs_res = requests.get("http://127.0.0.1:8000/documents")
+        docs_res = requests.get(f"{API_URL}/documents")
         if docs_res.status_code == 200:
             data = docs_res.json()
             st.markdown(f"**Total chunks:** {data['total_chunks']}")
-
             if data["documents"]:
                 st.markdown("**Uploaded Documents:**")
                 for doc in data["documents"]:
                     col1, col2 = st.columns([3, 1])
                     col1.markdown(f"📄 {doc}")
                     if col2.button("🗑️", key=f"del_{doc}"):
-                        del_res = requests.delete(f"http://127.0.0.1:8000/documents/{doc}")
+                        del_res = requests.delete(f"{API_URL}/documents/{doc}")
                         st.success(f"Deleted {doc}")
                         st.rerun()
             else:
@@ -49,14 +50,14 @@ with st.sidebar:
         if st.button("Upload & Process"):
             with st.spinner(f"Processing {uploaded_file.name}..."):
                 res = requests.post(
-                    "http://127.0.0.1:8000/upload",
+                    f"{API_URL}/upload",
                     files={"file": (uploaded_file.name, uploaded_file, "application/pdf")}
                 )
                 if res.status_code == 200:
                     data = res.json()
                     st.success(data["message"])
                     st.info(f"📄 Pages: {data['pages']} | 🧩 Chunks: {data['chunks']}")
-                    st.info(f"📚 Total chunks in KB: {data['total_chunks']}")
+                    st.info(f"📚 Total chunks in KB: {data['total_docs']}")
                     st.rerun()
                 else:
                     st.error("Upload failed.")
@@ -64,7 +65,7 @@ with st.sidebar:
     st.divider()
 
     if st.button("🗑️ Clear Chat"):
-        requests.post(f"http://127.0.0.1:8000/clear?session_id={st.session_state.session_id}")
+        requests.post(f"{API_URL}/clear?session_id={st.session_state.session_id}")
         st.session_state.messages = []
         st.rerun()
 
@@ -74,9 +75,8 @@ with st.sidebar:
     st.markdown("**Memory:** Last 3 exchanges")
 
 # --- MAIN CHAT ---
-# Check if any documents exist
 try:
-    docs_res = requests.get("http://127.0.0.1:8000/documents")
+    docs_res = requests.get(f"{API_URL}/documents")
     has_docs = docs_res.json()["total_chunks"] > 0
 except:
     has_docs = False
@@ -84,7 +84,6 @@ except:
 if not has_docs:
     st.info("👈 Upload at least one PDF from the sidebar to get started.")
 else:
-    # Display chat history
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
@@ -99,7 +98,7 @@ else:
         with st.chat_message("assistant"):
             with st.spinner("Searching across all documents..."):
                 res = requests.post(
-                    "http://127.0.0.1:8000/ask",
+                    f"{API_URL}/ask",
                     json={"question": question, "session_id": st.session_state.session_id}
                 )
                 answer = res.text
