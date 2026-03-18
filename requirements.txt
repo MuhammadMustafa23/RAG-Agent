@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+langchain
+langchain-groq
+langchain-community
+langchain-huggingface
+langchain-chroma
+langchain-text-splitters
+chromadb
+pypdf
+streamlit
+python-multipart
+requests
+python-dotenv
+sentence-transformers
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.1.0+cpu
